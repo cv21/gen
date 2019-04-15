@@ -1,0 +1,17 @@
+{
+  "files": [
+    {
+      "path": "./service.go",
+      "generators": [
+        {
+          "name": "mock",
+          "params": {
+            "interface_name": "StringService",
+            "out_path": "./generated/%s_mock_gen.go",
+            "package_name": "bla"
+          }
+        }
+      ]
+    }
+  ]
+}

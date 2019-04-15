@@ -1,8 +1,0 @@
-config:
-  -
-    file: "./service.go"
-    generators:
-      -
-        name: "mock"
-        params:
-          - interface: "StringService"
