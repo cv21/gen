@@ -13,7 +13,7 @@ import (
 const (
 	mockPackage = "github.com/stretchr/testify/mock"
 
-	// It it a name of current generator.
+	// It is a name of current generator.
 	// Useful for package comments.
 	generatorName = "mock"
 )
