@@ -16,8 +16,9 @@ Using Gen you need only `gen.json`, where you could describe a lot of code gener
 
 #### How To Use
 
-1. Add gen.json to your project
-2. Run `$ gen`
+1. Install gen by running `$ go get github.com/cv21/gen/cmd/gen`
+2. Add `gen.json` to your project root
+3. Run `$ gen` inside your project root
 
 #### gen.json structure
 
