@@ -128,7 +128,7 @@ func (g *basicGenerationFlow) ValidateResultPath(path string) error {
 		return errors.Wrap(ErrFileOutOfBasePath, path)
 	}
 
-	if !strings.HasSuffix(path, "_gen.go") {
+	if !strings.HasSuffix(path, "_gen.go") && !strings.HasSuffix(path, "_gen_test.go") {
 		return errors.Wrap(ErrResultFileWithoutGenPostfix, path)
 	}
 
