@@ -55,7 +55,7 @@ func TestMock_Generate(t *testing.T) {
 	"interface_name": "SomeService",
 	"out_path_template": "./generated/%s_mock_gen.go",
 	"source_package_path": "github.com/cv21/gen/examples/somesvc",
-	"target_package_path": "github.com/cv21/gen/examples/somesvc/bla"
+	"target_package_path": "github.com/cv21/gen/examples/somesvc/bla",
 	"mock_struct_name_template": "MockBlaBla%s"
 }`,
 		},

@@ -6,10 +6,10 @@
         {
           "name": "mock",
           "params": {
-            "interface_name": "SomeService",
+            "interface_name": "StringService",
             "out_path_template": "./generated/%s_mock_gen.go",
             "source_package_path": "github.com/cv21/gen/examples/stringsvc",
-            "target_package_path": "github.com/cv21/gen/examples/stringsvc/bla",
+            "target_package_path": "github.com/cv21/gen/examples/stringsvc/generated",
             "mock_struct_name_template": "MockBlaBla%s"
           }
         }
