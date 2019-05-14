@@ -11,19 +11,21 @@ import (
 )
 
 const (
-	mockPackage = "github.com/stretchr/testify/mock"
-
 	// It is a name of current generator.
-	// Useful for package comments.
-	generatorName = "mock"
+	// Useful for and package comments and generator registration.
+	PublicGeneratorName = "mock"
+
+	mockPackage = "github.com/stretchr/testify/mock"
 )
 
 type (
 	// It is custom parameters for mock generator.
 	GeneratorParams struct {
-		InterfaceName string `json:"interface_name"`
-		OutPath       string `json:"out_path"`
-		PackageName   string `json:"package_name"`
+		InterfaceName          string `json:"interface_name"`
+		OutPathTemplate        string `json:"out_path_template"`
+		SourcePackagePath      string `json:"source_package_path"`
+		TargetPackagePath      string `json:"target_package_path"`
+		MockStructNameTemplate string `json:"mock_struct_name_template"`
 	}
 
 	mockGenerator struct {
@@ -41,21 +43,21 @@ func (m *mockGenerator) Generate(p *pkg.GenerateParams) (*pkg.GenerateResult, er
 
 	iface := pkg.FindInterface(p.File, params.InterfaceName)
 
-	f := NewFile(params.PackageName)
+	f := NewFilePath(params.TargetPackagePath)
 
-	mockStructName := m.buildMockStructName(iface.Name)
+	mockStructName := m.buildMockStructName(params.MockStructNameTemplate, iface.Name)
 
 	f.Add(m.generateType(mockStructName, iface.Name)).Line()
 
 	for _, method := range iface.Methods {
-		f.Add(m.generateMethod(iface.Name, mockStructName, method)).Line()
+		f.Add(m.generateMethod(params, iface.Name, mockStructName, method)).Line()
 	}
 
 	return &pkg.GenerateResult{
 		Files: []pkg.GenerateResultFile{
 			{
-				Path:    fmt.Sprintf(params.OutPath, strcase.ToSnake(iface.Name)),
-				Content: []byte(fmt.Sprintf("%#v", pkg.AddDefaultPackageComment(f, generatorName))),
+				Path:    fmt.Sprintf(params.OutPathTemplate, strcase.ToSnake(iface.Name)),
+				Content: []byte(fmt.Sprintf("%#v", pkg.AddDefaultPackageComment(f, PublicGeneratorName))),
 			},
 		},
 	}, nil
@@ -90,15 +92,15 @@ func (m *mockGenerator) generateType(mockStructName, interfaceName string) *Stat
 //		return r0
 // }
 //
-func (m *mockGenerator) generateMethod(interfaceName, mockStructName string, method *types.Function) *Statement {
+func (m *mockGenerator) generateMethod(params *GeneratorParams, interfaceName, mockStructName string, method *types.Function) *Statement {
 	return Commentf("%s provides a mock function for method %s of interface %s.", method.Name, method.Name, interfaceName).Line().
 		Func().Params(Id("_m").Id(fmt.Sprintf("*%s", mockStructName))).Id(method.Name).ParamsFunc(func(g *Group) {
 		for _, a := range method.Args {
-			g.Id(a.Name).Add(pkg.TypeQual(a.Type))
+			g.Id(a.Name).Add(typeQual(params, a.Type))
 		}
 	}).ParamsFunc(func(g *Group) {
 		for _, r := range method.Results {
-			g.Id(r.Name).Add(pkg.TypeQual(r.Type))
+			g.Id(r.Name).Add(typeQual(params, r.Type))
 		}
 	}).BlockFunc(func(g *Group) {
 		g.Id("ret").Op(":=").Id("_m.Called").ParamsFunc(func(g *Group) {
@@ -112,19 +114,35 @@ func (m *mockGenerator) generateMethod(interfaceName, mockStructName string, met
 			currentRetName := fmt.Sprintf("r%d", i)
 			retNames = append(retNames, currentRetName)
 
-			g.Var().Id(currentRetName).Add(pkg.TypeQual(r.Type))
+			g.Var().Id(currentRetName).Add(typeQual(params, r.Type))
 			g.If(List(Id("rf"), Id("ok").Op(":=").Id("ret.Get").Call(Lit(i))).Assert(Func().ParamsFunc(func(g *Group) {
 				for _, a := range method.Args {
-					g.Id(a.Type.String())
+					g.Add(typeQual(params, a.Type))
 				}
-			}).Add(pkg.TypeQual(r.Type))), Id("ok")).BlockFunc(func(g *Group) {
+			}).Add(typeQual(params, r.Type))), Id("ok")).BlockFunc(func(g *Group) {
 				g.Id(currentRetName).Op("=").Id("rf").ParamsFunc(func(g *Group) {
 					for _, a := range method.Args {
 						g.Id(a.Name)
 					}
 				})
 			}).Else().BlockFunc(func(g *Group) {
-				g.Id(currentRetName).Op("=").Id("ret.Get").Params(Lit(i)).Assert(pkg.TypeQual(r.Type))
+				if pkg.IsErrorType(r.Type) {
+					// 		r0 = ret.Error(0)
+					g.Id(currentRetName).Op("=").Id("ret.Error").Params(Lit(i))
+				} else {
+					if pkg.IsNillableType(r.Type) {
+						// 		if ret.Get(0) != nil {
+						//			r0 = ret.Get(0).(*bla.Bla)
+						//		}
+						g.If(Id("ret.Get").Params(Lit(i)).Op("!=").Nil()).BlockFunc(func(g *Group) {
+							g.Add(Id(currentRetName).Op("=").Id("ret.Get").Params(Lit(i)).Assert(typeQual(params, r.Type)))
+						})
+					} else {
+						// 		r0 = ret.Get(0).(*bla.Bla)
+						g.Id(currentRetName).Op("=").Id("ret.Get").Params(Lit(i)).Assert(typeQual(params, r.Type))
+					}
+
+				}
 			}).Line()
 		}
 
@@ -137,8 +155,16 @@ func (m *mockGenerator) generateMethod(interfaceName, mockStructName string, met
 }
 
 // Returns a mock structure name by given interfaceName.
-func (m *mockGenerator) buildMockStructName(interfaceName string) string {
-	return fmt.Sprintf("%sMock", interfaceName)
+func (m *mockGenerator) buildMockStructName(template string, interfaceName string) string {
+	if template == "" {
+		template = "%sMock"
+	}
+	return fmt.Sprintf(template, interfaceName)
+}
+
+// It is a convenient func for calling pkg.TypeQual.
+func typeQual(params *GeneratorParams, t types.Type) *Statement {
+	return pkg.TypeQual(params.SourcePackagePath, params.TargetPackagePath, t)
 }
 
 // Allocates and returns new structure of mockGenerator.

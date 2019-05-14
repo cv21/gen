@@ -41,8 +41,10 @@ It allows to you to generate code as flexible as you want.
           "name": "mock",
           "params": {
             "interface_name": "StringService",
-            "out_path": "./generated/%s_mock_gen.go",
-            "package_name": "bla"
+            "out_path_template": "./generated/%s_mock_gen.go",
+            "source_package_path": "github.com/cv21/gen/examples/stringsvc",
+            "target_package_path": "github.com/cv21/gen/examples/stringsvc/generated",
+            "mock_struct_name_template": "%sMock"
           }
         }
       ]
@@ -59,9 +61,14 @@ It allows to you to generate code as flexible as you want.
 Generates [mockery](https://github.com/vektra/mockery)-compatible code for [testify](https://github.com/stretchr/testify).
 
 Parameters:
-- interface_name - The name of the interface to be mocked. 
-- out_path - Output path for the generated file.
-- package_name - Generated file package name.
+
+| Name | Description |
+|----------|----------|
+| interface_name      | The name of the interface to be mocked      |
+| out_path      | Output path for the generated file      |
+| package_name     | Generated file package name     |
+| mock_struct_name_template     | Template of mock structure     |
+
 
 Config example:
 
@@ -75,8 +82,10 @@ Config example:
           "name": "mock",
           "params": {
             "interface_name": "StringService",
-            "out_path": "./generated/%s_mock_gen.go",
-            "package_name": "bla"
+            "out_path_template": "./generated/%s_mock_gen.go",
+            "source_package_path": "github.com/cv21/gen/examples/stringsvc",
+            "target_package_path": "github.com/cv21/gen/examples/stringsvc/generated",
+            "mock_struct_name_template": "%sMock"
           }
         }
       ]

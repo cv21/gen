@@ -34,7 +34,7 @@ func main() {
 			config,
 			currentDir,
 			map[string]pkg.Generator{
-				"mock": mock.NewMockGenerator(),
+				mock.PublicGeneratorName: mock.NewMockGenerator(),
 			},
 		).
 		Run()

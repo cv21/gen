@@ -3,5 +3,5 @@ package somesvc
 import "io"
 
 type SomeService interface {
-	SomeSliceGetter() []io.Reader
+    SomeSliceGetter() []io.Reader
 }

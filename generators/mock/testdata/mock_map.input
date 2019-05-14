@@ -1,7 +1,5 @@
 package somesvc
 
-import "io"
-
 type SomeService interface {
-	SomeSliceGetter() []io.Reader
+    MapMethod(x map[string]*string) int
 }

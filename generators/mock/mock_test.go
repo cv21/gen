@@ -1,40 +1,65 @@
 package mock
 
 import (
-	"io/ioutil"
 	"testing"
 
 	"github.com/cv21/gen/pkg"
-	astra "github.com/vetcher/go-astra"
 )
 
 func TestMock_Generate(t *testing.T) {
-	mg := NewMockGenerator()
-
-	f, err := astra.ParseFile("./testdata/mock.input")
-	if err != nil {
-		t.Error(err)
+	testCases := []pkg.TestCase{
+		{
+			Name: "mock",
+			Params: `
+{
+	"interface_name": "StringService",
+	"out_path_template": "./generated/%s_mock_gen.go",
+	"source_package_path": "github.com/cv21/gen/examples/stringsvc",
+	"target_package_path": "github.com/cv21/gen/examples/stringsvc/bla"
+}`,
+		},
+		{
+			Name: "mock_interface",
+			Params: `
+{
+	"interface_name": "SomeService",
+	"out_path_template": "./generated/%s_mock_gen.go",
+	"source_package_path": "github.com/cv21/gen/examples/somesvc",
+	"target_package_path": "github.com/cv21/gen/examples/somesvc/bla"
+}`,
+		},
+		{
+			Name: "mock_map",
+			Params: `
+{
+	"interface_name": "SomeService",
+	"out_path_template": "./generated/%s_mock_gen.go",
+	"source_package_path": "github.com/cv21/gen/examples/somesvc",
+	"target_package_path": "github.com/cv21/gen/examples/somesvc/bla"
+}`,
+		},
+		{
+			Name: "mock_slice",
+			Params: `
+{
+	"interface_name": "SomeService",
+	"out_path_template": "./generated/%s_mock_gen.go",
+	"source_package_path": "github.com/cv21/gen/examples/somesvc",
+	"target_package_path": "github.com/cv21/gen/examples/somesvc/bla"
+}`,
+		},
+		{
+			Name: "mock_custom_struct_name",
+			Params: `
+{
+	"interface_name": "SomeService",
+	"out_path_template": "./generated/%s_mock_gen.go",
+	"source_package_path": "github.com/cv21/gen/examples/somesvc",
+	"target_package_path": "github.com/cv21/gen/examples/somesvc/bla"
+	"mock_struct_name_template": "MockBlaBla%s"
+}`,
+		},
 	}
 
-	result, err := mg.Generate(&pkg.GenerateParams{
-		File: f,
-		Params: []byte(`{
-            "interface_name": "StringService",
-            "out_path": "./generated/%s_mock_gen.go",
-            "package_name": "bla"
-          }`),
-	})
-
-	if err != nil {
-		t.Error(err)
-	}
-
-	goldenFile, err := ioutil.ReadFile("./testdata/mock.golden")
-	if err != nil {
-		t.Error(err)
-	}
-
-	if string(result.Files[0].Content) != string(goldenFile) {
-		t.Error("files are not equals", string(result.Files[0].Content), string(goldenFile))
-	}
+	pkg.RunTestCases(t, testCases, NewMockGenerator())
 }
