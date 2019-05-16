@@ -1,5 +1,0 @@
-package somesvc
-
-type SomeService interface {
-    MapMethod(x map[string]*string) int
-}
