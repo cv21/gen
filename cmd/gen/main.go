@@ -7,14 +7,24 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/cv21/gen/generators/mock"
 	"github.com/cv21/gen/internal"
-	"github.com/cv21/gen/pkg"
 )
 
 const defaultConfigPath = "./gen.json"
 
 func main() {
+	gopath := os.Getenv("GOPATH")
+	if gopath == "" {
+		log.Fatal("gopath is not set")
+		os.Exit(1)
+	}
+
+	gomodule := os.Getenv("GO111MODULE")
+	if gomodule != "on" {
+		log.Fatal("GO111MODULE is not setted to on")
+		os.Exit(1)
+	}
+
 	currentDir, err := os.Getwd()
 	if err != nil {
 		log.Fatal(err)
@@ -28,14 +38,15 @@ func main() {
 		os.Exit(1)
 	}
 
+	genPool := internal.NewGeneratorPool(config, gopath)
+	defer genPool.Close()
+
 	// Run basic generation flow.
 	err = internal.
 		NewBasicGenerationFlow(
 			config,
 			currentDir,
-			map[string]pkg.Generator{
-				mock.PublicGeneratorName: mock.NewMockGenerator(),
-			},
+			genPool,
 		).
 		Run()
 

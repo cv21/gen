@@ -5,7 +5,7 @@
       "generators": [
         {
           "repository": "github.com/cv21/gen-generator-mock",
-          "version": "1.2.4",
+          "version": "1.0.0",
           "params": {
             "interface_name": "StringService",
             "out_path_template": "./generated/%s_mock_gen.go",

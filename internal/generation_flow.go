@@ -21,8 +21,9 @@ type (
 		Files []struct {
 			Path       string `json:"path"`
 			Generators []struct {
-				Name   string          `json:"name"`
-				Params json.RawMessage `json:"params"`
+				Repository string          `json:"repository"`
+				Version    string          `json:"version"`
+				Params     json.RawMessage `json:"params"`
 			} `json:"generators"`
 		} `json:"files"`
 	}
@@ -36,12 +37,11 @@ type (
 	basicGenerationFlow struct {
 		cfg        *Config
 		currentDir string
-		generators map[string]pkg.Generator
+		genPool    GeneratorPool
 	}
 )
 
 var (
-	ErrCouldNotFindGenerator       = errors.New("could not find generator")
 	ErrCouldNotParseFile           = errors.New("could not parse file")
 	ErrCouldNotGenerateFile        = errors.New("could not generate file")
 	ErrFileOutOfBasePath           = errors.New("result file out of base path")
@@ -49,11 +49,11 @@ var (
 )
 
 // Returns new basic generation flow.
-func NewBasicGenerationFlow(cfg *Config, currentDir string, generators map[string]pkg.Generator) GenerationFlow {
+func NewBasicGenerationFlow(cfg *Config, currentDir string, genPool GeneratorPool) GenerationFlow {
 	return &basicGenerationFlow{
 		cfg:        cfg,
 		currentDir: currentDir,
-		generators: generators,
+		genPool:    genPool,
 	}
 }
 
@@ -68,15 +68,12 @@ func (g *basicGenerationFlow) Run() error {
 		}
 
 		for _, generator := range conf.Generators {
-			gen, ok := g.generators[generator.Name]
-			if !ok {
-				return errors.Wrap(ErrCouldNotFindGenerator, generator.Name)
-			}
-
-			genResult, err := gen.Generate(&pkg.GenerateParams{
-				File:   f,
-				Params: generator.Params,
-			})
+			genResult, err := g.genPool.
+				Get(generator.Repository, generator.Version).
+				Generate(&pkg.GenerateParams{
+					File:   f,
+					Params: generator.Params,
+				})
 
 			if err != nil {
 				return errors.Wrap(ErrCouldNotGenerateFile, err.Error())
