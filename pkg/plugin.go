@@ -9,6 +9,13 @@ import (
 // It is default command for each generator plugin.
 const cmdPluginGenerate = "Plugin.Generate"
 
+// DefaultHandshakeConfig useful for plugin compatibility specification.
+var DefaultHandshakeConfig = plugin.HandshakeConfig{
+	ProtocolVersion:  1,
+	MagicCookieKey:   "HOST",
+	MagicCookieValue: "GEN",
+}
+
 // It is a plugin client.
 type Client struct {
 	client *rpc.Client

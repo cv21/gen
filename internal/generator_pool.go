@@ -94,6 +94,7 @@ func (p *generatorPool) initGenerators() {
 			}
 
 			client := plugin.NewClient(&plugin.ClientConfig{
+				HandshakeConfig: pkg.DefaultHandshakeConfig,
 				Plugins: map[string]plugin.Plugin{
 					p.buildGeneratorID(g.Repository, g.Version): &pkg.NetRPCWorker{},
 				},
