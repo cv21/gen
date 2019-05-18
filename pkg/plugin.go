@@ -1,9 +1,11 @@
 package pkg
 
 import (
+	"encoding/gob"
 	"net/rpc"
 
 	plugin "github.com/hashicorp/go-plugin"
+	"github.com/vetcher/go-astra/types"
 )
 
 // It is default command for each generator plugin.
@@ -57,4 +59,17 @@ func (n *NetRPCWorker) Server(*plugin.MuxBroker) (interface{}, error) {
 // Returns a client for net/rpc.
 func (NetRPCWorker) Client(b *plugin.MuxBroker, c *rpc.Client) (interface{}, error) {
 	return &Client{client: c}, nil
+}
+
+// Registers specific types for gob encoding/decoding.
+// This work properly this function MUST be called by both client and server.
+func RegisterGobTypes() {
+	gob.Register(types.TInterface{})
+	gob.Register(types.TMap{})
+	gob.Register(types.TName{})
+	gob.Register(types.TPointer{})
+	gob.Register(types.TArray{})
+	gob.Register(types.TImport{})
+	gob.Register(types.TEllipsis{})
+	gob.Register(types.TChan{})
 }

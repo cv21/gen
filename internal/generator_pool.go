@@ -48,14 +48,17 @@ func (p *generatorPool) initGenerators() {
 
 	for _, f := range p.cfg.Files {
 		for _, g := range f.Generators {
-			if _, err := os.Stat(p.buildGeneratorPath(g.Repository, g.Version)); os.IsNotExist(err) {
+			generatorPath := p.buildGeneratorPath(g.Repository, g.Version)
+			generatorID := p.buildGeneratorID(g.Repository, g.Version)
+
+			if _, err := os.Stat(generatorPath); os.IsNotExist(err) {
 				logger.Debug("generator is not installed", g.Repository, g.Version)
 				logger.Debug("installing", g.Repository, g.Version)
 
-				genPath := p.gopath + "/pkg/gen"
+				genDirPath := p.gopath + "/pkg/gen"
 
-				if _, err := os.Stat(genPath); os.IsNotExist(err) {
-					err = os.MkdirAll(genPath, os.ModePerm)
+				if _, err := os.Stat(genDirPath); os.IsNotExist(err) {
+					err = os.MkdirAll(genDirPath, os.ModePerm)
 					if err != nil {
 						logger.Debug("err", err)
 						log.Fatal(err)
@@ -63,8 +66,8 @@ func (p *generatorPool) initGenerators() {
 					}
 				}
 
-				cmd := exec.Command("go", "get", p.buildGeneratorID(g.Repository, g.Version))
-				cmd.Dir = genPath
+				cmd := exec.Command("go", "get", generatorID)
+				cmd.Dir = genDirPath
 
 				err := cmd.Run()
 				if err != nil {
@@ -74,10 +77,10 @@ func (p *generatorPool) initGenerators() {
 				}
 
 				logger.Debug("run go build", g.Repository, g.Version)
-				cmd = exec.Command("go", "build", "-o", p.buildGeneratorPath(g.Repository, g.Version), fmt.Sprintf("%s/pkg/mod/%s/main.go", p.gopath, p.buildGeneratorID(g.Repository, g.Version)))
+				cmd = exec.Command("go", "build", "-o", generatorPath, fmt.Sprintf("%s/pkg/mod/%s/main.go", p.gopath, generatorID))
 
 				logger.Debug("path", cmd.Path)
-				logger.Debug("generator path", p.buildGeneratorPath(g.Repository, g.Version))
+				logger.Debug("generator path", generatorPath)
 
 				err = cmd.Run()
 				if err != nil {
@@ -87,7 +90,7 @@ func (p *generatorPool) initGenerators() {
 
 				logger.Debug("check stat", g.Repository, g.Version)
 				// Check that generator installed.
-				if _, err := os.Stat(p.buildGeneratorPath(g.Repository, g.Version)); os.IsNotExist(err) {
+				if _, err := os.Stat(generatorPath); os.IsNotExist(err) {
 					log.Fatal("generator could not be installed", g.Repository, g.Version)
 					return
 				}
@@ -96,9 +99,9 @@ func (p *generatorPool) initGenerators() {
 			client := plugin.NewClient(&plugin.ClientConfig{
 				HandshakeConfig: pkg.DefaultHandshakeConfig,
 				Plugins: map[string]plugin.Plugin{
-					p.buildGeneratorID(g.Repository, g.Version): &pkg.NetRPCWorker{},
+					generatorID: &pkg.NetRPCWorker{},
 				},
-				Cmd:    exec.Command(p.buildGeneratorPath(g.Repository, g.Version)),
+				Cmd:    exec.Command(generatorPath),
 				Logger: logger,
 			})
 			p.clients = append(p.clients, client)
@@ -108,12 +111,12 @@ func (p *generatorPool) initGenerators() {
 				log.Fatal(err)
 			}
 
-			raw, err := rpcClient.Dispense(g.Repository)
+			raw, err := rpcClient.Dispense(generatorID)
 			if err != nil {
 				log.Fatal(err)
 			}
 
-			p.generators[p.buildGeneratorID(g.Repository, g.Version)] = raw.(pkg.Generator)
+			p.generators[generatorID] = raw.(pkg.Generator)
 		}
 	}
 }

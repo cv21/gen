@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/cv21/gen/pkg"
+
 	"github.com/cv21/gen/internal"
 )
 
@@ -37,6 +39,8 @@ func main() {
 		log.Fatal(err)
 		os.Exit(1)
 	}
+
+	pkg.RegisterGobTypes()
 
 	genPool := internal.NewGeneratorPool(config, gopath)
 	defer genPool.Close()
