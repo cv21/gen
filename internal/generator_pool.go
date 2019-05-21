@@ -78,6 +78,7 @@ func (p *generatorPool) initGenerators() {
 
 				logger.Debug("run go build", g.Repository, g.Version)
 				cmd = exec.Command("go", "build", "-o", generatorPath, fmt.Sprintf("%s/pkg/mod/%s/main.go", p.gopath, generatorID))
+				cmd.Dir = genDirPath
 
 				logger.Debug("path", cmd.Path)
 				logger.Debug("generator path", generatorPath)
