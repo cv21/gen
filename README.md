@@ -3,9 +3,9 @@ Gen
 Flexible code generation tool which perfectly integrates with your project.
 
 #### Main Features
-- Embedded versioned and widely customizable generators
+- Pluggable versioned and widely customizable code generators
 - Verbose code generation config
-- Parsed and convenient Go code entities
+- Parsed Go code as a set of convenient instrument for easy and fast creation of new code generators
 
 #### Limitations
 - It's hard to make a custom AST walker. You work with already parsed go code which is most convenient for almost all cases.
