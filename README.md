@@ -3,20 +3,24 @@ Gen
 Flexible code generation tool which perfectly integrates with your project.
 
 #### Main Features
-- Versioned code generation
+- Embedded versioned and widely customizable generators
 - Verbose code generation config
-- Plugged-in versioned generators
+- Parsed and convenient Go code entities
+
+#### Limitations
+- It's hard to make a custom AST walker. You work with already parsed go code which is most convenient for almost all cases.
+- Working only with go modules system (GO111MODULE=on).
 
 #### Project status
 Beta-version. Not recommended to use it in production.
 
 #### Goals
-The main goal of Gen is to make code generation more flexible and easy to maintain. 
-Using Gen you need only `gen.json`, where you could describe a lot of code generation details.
+The main goal of *Gen* is to make code generation more flexible and easy to maintain. 
+Using *Gen* you need only `gen.json`, where you could describe a lot of code generation details.
 
 #### How To Use
 
-1. Install gen by running `$ go get github.com/cv21/gen/cmd/gen`
+1. Install `gen` by running `$ go get github.com/cv21/gen/cmd/gen`
 2. Add `gen.json` to your project root
 3. Run `$ gen` inside your project root
 
@@ -25,11 +29,13 @@ Using Gen you need only `gen.json`, where you could describe a lot of code gener
 `gen.json` consists of one section which called `files`.
 
 Lets look how it works: 
-- Gen reads all items in `files` array
-- After that Gen reads and parses each file which is located in `path`
-- Then Gen passes parsed file along with params to each of generators counted in `generators`
+- *Gen* reads all items in `files` array
+- After that *Gen* reads and parses each file which is located in `path`
+- Then *Gen* passes parsed file along with params to each of generators counted in `generators`
 
-It allows to you to generate code as flexible as you want. 
+It allows to you to generate code around your project as flexible as you want. 
+
+Example:
 
 ```json
 {
@@ -38,7 +44,7 @@ It allows to you to generate code as flexible as you want.
       "path": "./service.go",
       "generators": [
         {
-          "repository": "github.com/cv21/mock",
+          "repository": "github.com/cv21/gen-generator-mock",
           "version": "1.0.0",
           "params": {
             "interface_name": "StringService",
@@ -55,6 +61,8 @@ It allows to you to generate code as flexible as you want.
 
 ```
 
+For a `version` property of generator you must use [standard Golang module queries](https://tip.golang.org/cmd/go/#hdr-Module_queries)
+
 #### Future Enhancements
 
-- Ability to use go:generate instead of gen.json for short plugin configurations. Also stay with versions, plugins and building system.
+- Ability to use `go:generate` instead of `gen.json` for short plugin configurations as a lightweight but yet powerful, versioned and flexible code generation system.
