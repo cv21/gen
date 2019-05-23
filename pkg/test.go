@@ -25,7 +25,7 @@ func RunTestCases(t *testing.T, testCases []TestCase, generator Generator) {
 	diffWorker := godiff.New()
 
 	for _, tc := range testCases {
-		f, err := astra.ParseFile(fmt.Sprintf("./testdata/%s.input", tc.Name))
+		f, err := astra.ParseFile(fmt.Sprintf("./testdata/%s/%s.input", tc.Name, tc.Name))
 		if err != nil {
 			t.Error(err)
 		}
