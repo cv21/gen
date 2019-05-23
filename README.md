@@ -24,8 +24,6 @@ Using __gen__ you need only `gen.json`, where you could describe a lot of code g
 2. Add `gen.json` to your project root (see examples directory in this project)
 3. Run `$ gen` inside your project root
 
-For a `version` property of generator you __must__ use [standard Golang module queries](https://tip.golang.org/cmd/go/#hdr-Module_queries)
-
 ### Generators
 
 - [gen-generator-base](https://github.com/cv21/gen-generator-base) - gen generator basis generation
@@ -35,6 +33,32 @@ For a `version` property of generator you __must__ use [standard Golang module q
 - gen-logging-middleware (coming soon) - logging middleware generator
 
 \* *You can use other or make your own generator for __gen__*<br>\* *Feel free to __contibute__ your generators to this page*
+
+### Description of `gen.json`
+
+Typical `gen.json` consists of `files` json array.
+
+```json
+{
+  "files": [
+    {
+      "path": "./path_to_some_source_file.go",
+      "generators": [
+        {
+          "repository": "github.com/some/name-of-generator",
+          "version": "v1.0.0",
+          "params": {
+            "some_generator_custom_param": "some_value",
+          }
+        }
+      ]
+    }
+  ]
+}
+    
+```
+
+\* For a `version` property of generator you __must__ use [standard Golang module queries](https://tip.golang.org/cmd/go/#hdr-Module_queries)
 
 ### Future Enhancements
 
