@@ -21,6 +21,42 @@ func FindInterface(f *types.File, name string) *types.Interface {
 	return nil
 }
 
+// FindStructure finds a structure from given file by given name.
+// Returns nil if structure is not found.
+func FindStructure(f *types.File, name string) *types.Struct {
+	for _, strct := range f.Structures {
+		if strct.Name == name {
+			return &strct
+		}
+	}
+
+	return nil
+}
+
+// FindMethod finds a method from given file by given name.
+// Returns nil if structure is not found.
+func FindMethod(f *types.File, name string) *types.Method {
+	for _, method := range f.Methods {
+		if method.Name == name {
+			return &method
+		}
+	}
+
+	return nil
+}
+
+// FindFunction finds a function from given file by given name.
+// Returns nil if structure is not found.
+func FindFunction(f *types.File, name string) *types.Function {
+	for _, fun := range f.Functions {
+		if fun.Name == name {
+			return &fun
+		}
+	}
+
+	return nil
+}
+
 // Constructs jennifer statement for given astra type.
 func TypeQual(currentPackage string, targetPackage string, t types.Type) *jen.Statement {
 	stringRepr := t.String()

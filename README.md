@@ -66,6 +66,7 @@ For a `version` property of generator you must use [standard Golang module queri
 #### Generators
 
 - [gen-generator-mock](https://github.com/cv21/gen-generator-mock) - mocks generation
+- [gen-generator-base](https://github.com/cv21/gen-generator-base) - gen generator basis generation
 - gen-gokit-http (coming soon) - go-kit http transport generation
 - gen-gokit-grpc (coming soon) - go-kit grpc transport generation
 - gen-logging-middleware (coming soon) - logging middleware generator
