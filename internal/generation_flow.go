@@ -42,9 +42,11 @@ type (
 )
 
 var (
-	ErrCouldNotParseFile           = errors.New("could not parse file")
-	ErrCouldNotGenerateFile        = errors.New("could not generate file")
-	ErrFileOutOfBasePath           = errors.New("result file out of base path")
+	ErrCouldNotParseFile    = errors.New("could not parse file")
+	ErrCouldNotGenerateFile = errors.New("could not generate file")
+	ErrFileOutOfBasePath    = errors.New("result file out of base path")
+
+	// This error used when we generate not main.go files without _gen.go or _gen_test.go postfix.
 	ErrResultFileWithoutGenPostfix = errors.New("result file without specific gen postfix")
 )
 
@@ -125,7 +127,10 @@ func (g *basicGenerationFlow) ValidateResultPath(path string) error {
 		return errors.Wrap(ErrFileOutOfBasePath, path)
 	}
 
-	if !strings.HasSuffix(path, "_gen.go") && !strings.HasSuffix(path, "_gen_test.go") {
+	if strings.HasSuffix(path, ".go") &&
+		filepath.Base(path) != "main.go" &&
+		!strings.HasSuffix(path, "_gen.go") &&
+		!strings.HasSuffix(path, "_gen_test.go") {
 		return errors.Wrap(ErrResultFileWithoutGenPostfix, path)
 	}
 
