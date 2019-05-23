@@ -88,7 +88,7 @@ func RunTestCases(t *testing.T, testCases []TestCase, generator Generator, optio
 				}
 			}
 
-			return
+			continue
 		}
 
 		goldenFiles := make(map[string][]byte)
