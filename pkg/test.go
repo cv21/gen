@@ -72,7 +72,17 @@ func RunTestCases(t *testing.T, testCases []TestCase, generator Generator, optio
 		// It is experimental feature.
 		if opts.GoldenFileGeneration {
 			for k := range result.Files {
-				err = ioutil.WriteFile(fmt.Sprintf("%s.golden", filepath.Join("./testdata/%s", tc.Name, result.Files[k].Path)), result.Files[k].Content, defaultFilePermissions)
+				err = ioutil.WriteFile(
+					fmt.Sprintf(
+						"%s.golden",
+						filepath.Join(
+							fmt.Sprintf("./testdata/%s", tc.Name),
+							result.Files[k].Path,
+						),
+					),
+					result.Files[k].Content,
+					defaultFilePermissions,
+				)
 				if err != nil {
 					panic(err)
 				}
