@@ -2,14 +2,14 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 
-	"github.com/cv21/gen/pkg"
-
 	"github.com/cv21/gen/internal"
+	"github.com/cv21/gen/pkg"
+	. "github.com/logrusorgru/aurora"
 )
 
 const defaultConfigPath = "./gen.json"
@@ -17,32 +17,37 @@ const defaultConfigPath = "./gen.json"
 func main() {
 	gopath := os.Getenv("GOPATH")
 	if gopath == "" {
-		log.Fatal("gopath is not set")
+		fmt.Println(Yellow("Could not find gopath. Please specify GOPATH environment variable"))
 		os.Exit(1)
 	}
 
 	gomodule := os.Getenv("GO111MODULE")
 	if gomodule != "on" {
-		log.Fatal("GO111MODULE is not setted to on")
+		fmt.Println(Yellow("Gen works only with enabled Go modules feature. Please set environment variable GO111MODULE=on."))
 		os.Exit(1)
 	}
 
 	currentDir, err := os.Getwd()
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(Red(err))
 		os.Exit(1)
 	}
 
 	// Load and parse config.
 	config, err := loadConfig(currentDir, defaultConfigPath)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(Red(err))
 		os.Exit(1)
 	}
 
 	pkg.RegisterGobTypes()
 
-	genPool := internal.NewGeneratorPool(config, gopath)
+	genPool, err := internal.BuildGeneratorPool(config, gopath)
+	if err != nil {
+		fmt.Println(Red(err))
+		os.Exit(1)
+	}
+
 	defer genPool.Close()
 
 	// Run basic generation flow.
@@ -55,12 +60,12 @@ func main() {
 		Run()
 
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println(Red(err))
 		os.Exit(1)
 	}
 }
 
-// loadConfig load file and parse it to internal config struct.
+// loadConfig loads file and parses it to internal config struct.
 func loadConfig(currentDir, configPath string) (*internal.Config, error) {
 	path := filepath.Join(currentDir, configPath)
 	rawConf, err := ioutil.ReadFile(path)

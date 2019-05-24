@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/cv21/gen/pkg"
+	"github.com/disiqueira/gotree"
+	. "github.com/logrusorgru/aurora"
 	"github.com/pkg/errors"
 	astra "github.com/vetcher/go-astra"
 )
@@ -42,9 +44,7 @@ type (
 )
 
 var (
-	ErrCouldNotParseFile    = errors.New("could not parse file")
-	ErrCouldNotGenerateFile = errors.New("could not generate file")
-	ErrFileOutOfBasePath    = errors.New("result file out of base path")
+	ErrFileOutOfBasePath = errors.New("result file out of base path")
 
 	// This error used when we generate not main.go files without _gen.go or _gen_test.go postfix.
 	ErrResultFileWithoutGenPostfix = errors.New("result file without specific gen postfix")
@@ -61,15 +61,25 @@ func NewBasicGenerationFlow(cfg *Config, currentDir string, genPool GeneratorPoo
 
 // Runs basic generation flow.
 func (g *basicGenerationFlow) Run() error {
+	rootTree := gotree.New(g.currentDir)
+
 	for _, conf := range g.cfg.Files {
+		fileBranch := rootTree.Add(conf.Path)
+
 		path := filepath.Join(g.currentDir, conf.Path)
 
+		Printf(kindInfo, "Parsing file %s", path)
 		f, err := astra.ParseFile(path)
 		if err != nil {
-			return errors.Wrap(ErrCouldNotParseFile, err.Error())
+			return errors.Wrap(err, "could not parse file")
 		}
 
 		for _, generator := range conf.Generators {
+			generatorID := buildGeneratorID(generator.Repository, generator.Version)
+
+			generatorBranch := fileBranch.Add(fmt.Sprint(Green(Bold(generator.Repository)), Green(Faint(generator.Version))))
+
+			Printf(kindInfo, "Generating by %s", generatorID)
 			genResult, err := g.genPool.
 				Get(generator.Repository, generator.Version).
 				Generate(&pkg.GenerateParams{
@@ -78,45 +88,49 @@ func (g *basicGenerationFlow) Run() error {
 				})
 
 			if err != nil {
-				return errors.Wrap(ErrCouldNotGenerateFile, err.Error())
+				return errors.Wrap(err, "could not generate file")
 			}
 
 			for _, resFile := range genResult.Files {
 				resFile.Path, err = filepath.Abs(resFile.Path)
 				if err != nil {
-					return err
+					return errors.Wrap(err, "could not construct absolute path")
 				}
-
-				fmt.Println(resFile.Path)
 
 				err = g.ValidateResultPath(resFile.Path)
 				if err != nil {
-					return err
+					return errors.Wrap(err, "invalid result path")
 				}
 
 				// Check that directory exists
 				// Trying to create directory if it does not exist.
 				dir := filepath.Dir(resFile.Path)
 
-				fmt.Println(dir)
-
 				if _, err := os.Stat(dir); err != nil {
 					if os.IsNotExist(err) {
 						if err = os.MkdirAll(dir, defaultFilePermissions); err != nil {
-							return err
+							return errors.Wrap(err, "could not make directory for generated file")
 						}
 					} else {
-						return err
+						return errors.Wrap(err, "could not stat directory where generated file need to be stored")
 					}
 				}
 
 				err = ioutil.WriteFile(resFile.Path, []byte(resFile.Content), os.FileMode(defaultFilePermissions))
 				if err != nil {
-					return err
+					return errors.Wrap(err, "could not write file")
 				}
+
+				relPath, _ := filepath.Rel(g.currentDir, resFile.Path)
+				generatorBranch.Add(fmt.Sprintf("./%s", relPath))
+
+				Printf(kindSuccess, "Successfully generated file %s", resFile.Path)
 			}
 		}
 	}
+
+	Print(kindSuccess, "\nAll files successfully generated!")
+	Print(kindInfo, rootTree.Print())
 
 	return nil
 }
