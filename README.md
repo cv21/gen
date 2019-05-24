@@ -16,9 +16,10 @@ Beta-version. Not recommended to use it in production.
 
 ### Goals
 The main goal of __gen__ is to make code generation more flexible and easy to maintain. 
-Using __gen__ you need only `gen.json`, where you could describe a lot of code generation details.
 
 ### How To Use
+
+Using __gen__ you need only `gen` cli utility and [`gen.json`](https://github.com/cv21/gen#description-of-genjson) file, where you could describe code generation details.
 
 1. Install `gen` by running `$ go get github.com/cv21/gen/cmd/gen`
 2. Add `gen.json` to your project root (see examples directory in this project)
