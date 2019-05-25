@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -21,13 +20,13 @@ type (
 	// It is a general config structure which is represents parsed gen.json file.
 	Config struct {
 		Files []struct {
-			Path       string `json:"path"`
+			Path       string `json:"path", yaml:"path"`
 			Generators []struct {
-				Repository string          `json:"repository"`
-				Version    string          `json:"version"`
-				Params     json.RawMessage `json:"params"`
-			} `json:"generators"`
-		} `json:"files"`
+				Repository string `json:"repository", yaml:"repository"`
+				Version    string `json:"version", yaml:"version"`
+				Params     []byte `json:"params", yaml:"params"`
+			} `json:"generators", yaml:"generators"`
+		} `json:"files", yaml:"files"`
 	}
 
 	// GenerationFlow declare basic generation flow.

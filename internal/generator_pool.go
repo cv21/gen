@@ -47,7 +47,7 @@ func BuildGeneratorPool(cfg *Config, gopath string) (_ GeneratorPool, err error)
 		generators: make(map[string]pkg.Generator),
 	}
 
-	// It closes all connections with plugins.
+	// It closes all connections with plugins if some error happened.
 	// It looks better when we call defer here when something going wrong.
 	defer func() {
 		if err != nil {
