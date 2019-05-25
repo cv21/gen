@@ -17,7 +17,7 @@ func TestBasicGenerationFlow_ValidateResultPath(t *testing.T) {
 			IsErr: true,
 		},
 		{
-			Name:  "without gen prefix",
+			Name:  "without gen postfix",
 			Path:  "./bla/bla.go",
 			IsErr: true,
 		},
@@ -27,7 +27,12 @@ func TestBasicGenerationFlow_ValidateResultPath(t *testing.T) {
 			IsErr: false,
 		},
 		{
-			Name:  "main file without gen prefix",
+			Name:  "with gen_test.go postfix",
+			Path:  "./bla/bla_gen_test.go",
+			IsErr: false,
+		},
+		{
+			Name:  "main file without gen postfix",
 			Path:  "./bla/main.go",
 			IsErr: false,
 		},
