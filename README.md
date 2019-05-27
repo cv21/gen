@@ -19,10 +19,10 @@ The main goal of __gen__ is to make code generation more flexible and easy to ma
 
 ### How To Use
 
-Using __gen__ you need only `gen` cli utility and `gen.json` file (see its [description](https://github.com/cv21/gen#description-of-genjson)), where you could describe code generation details.
+Using __gen__ you need only `gen` cli utility and `gen.yml` file (see its [description](https://github.com/cv21/gen#description-of-genyml)), where you could describe code generation details.
 
 1. Install `gen` by running `$ go get github.com/cv21/gen/cmd/gen`
-2. Add `gen.json` to your project root (see examples directory in this project)
+2. Add `gen.yml` to your project root (see examples directory in this project)
 3. Run `$ gen` inside your project root
 
 ### Generators
@@ -35,32 +35,29 @@ Using __gen__ you need only `gen` cli utility and `gen.json` file (see its [desc
 
 \* *You can use other or make your own generator for __gen__*<br>\* *Feel free to __contibute__ your generators to this page*
 
-### Description of `gen.json`
+### Description of `gen.yml`
 
-Typical `gen.json` consists of `files` json array.
+Typical `gen.yml` consists of `files` config array.
+<br>Each file consists of:
+- `path` - Path to source file which will be passed to specified generator.
+- `repository` - Link to generator repository. It supports [standard Golang module queries](https://tip.golang.org/cmd/go/#hdr-Module_queries) for versioning.
+- `params` - Custom params for generator. 
 
-```json
-{
-  "files": [
-    {
-      "path": "./path_to_some_source_file.go",
-      "generators": [
-        {
-          "repository": "github.com/some/name-of-generator",
-          "version": "v1.0.0",
-          "params": {
-            "some_generator_custom_param": "some_value",
-          }
-        }
-      ]
-    }
-  ]
-}
-    
+`gen.yml` example:
+```yml
+files:
+  - path: ./path_to_some_source_file.go
+    repository: github.com/some/name-of-generator@v1.0.0
+    params:
+      some_generator_custom_param: some_value
+  - path: ./path_to_some_another_file.go
+    repository: github.com/another/name-of-generator@master
+    params:
+      another_generator_custom_param: other_value
 ```
 
-\* For a `version` property of generator you __must__ use [standard Golang module queries](https://tip.golang.org/cmd/go/#hdr-Module_queries)
+\* 
 
 ### Future Enhancements
 
-- Ability to use `go:generate` instead of `gen.json` for short plugin configurations as a lightweight but yet powerful, versioned and flexible code generation system.
+- Ability to use `go:generate` instead of `gen.yml` for short plugin configurations as a lightweight but yet powerful, versioned and flexible code generation system.
