@@ -4,18 +4,17 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"regexp"
 
-	"github.com/cv21/gen/pkg"
 	hclog "github.com/hashicorp/go-hclog"
 	plugin "github.com/hashicorp/go-plugin"
+	"github.com/cv21/gen/pkg"
 	"github.com/pkg/errors"
 )
 
 type (
 	// It is an interface which real generator pool holder must implement.
 	GeneratorPool interface {
-		Get(repository string, version string) pkg.Generator
+		Get(repoWithQuery string) pkg.Generator
 		Close()
 	}
 
@@ -31,10 +30,6 @@ type (
 		clients []*plugin.Client
 	}
 )
-
-// versionRegexp match the strings like 1.2 or 1.2.5
-// It useful for separation misspelled version tags (without v prefix) and other ref names.
-var versionRegexp, _ = regexp.Compile(`^\d+\.\d+(\.\d+)?$`)
 
 // Returns new GeneratorPool implementation with necessary generators.
 // Returns non nil error when something went wrong.
@@ -67,119 +62,105 @@ func (p *generatorPool) initGenerators() error {
 	})
 
 	// Flag indicates that we have been installed some generators while running.
-	var needToInstall bool
+	var somethingInstalled bool
 
 	for _, f := range p.cfg.Files {
-		for _, g := range f.Generators {
-			generatorPath := p.buildGeneratorPath(g.Repository, g.Version)
-			generatorID := buildGeneratorID(g.Repository, g.Version)
+		generatorPath := p.buildGeneratorPath(f.RepoWithQuery)
 
-			// Check that generator binary exists.
+		// Check that generator binary exists.
+		if _, err := os.Stat(generatorPath); os.IsNotExist(err) {
+			somethingInstalled = true
+
+			logger.Debug("generator is not installed", f.RepoWithQuery)
+			Printf(kindInfo, "Installing %s", f.RepoWithQuery)
+
+			genDirPath := p.gopath + "/pkg/gen"
+
+			// Create gen directory if it does not exist.
+			if _, err := os.Stat(genDirPath); os.IsNotExist(err) {
+				err = os.MkdirAll(genDirPath, os.ModePerm)
+				if err != nil {
+					return errors.Wrap(err, "could not make gen dir")
+				}
+			}
+
+			// Download generator using go get.
+			cmd := exec.Command("go", "get", "-u", f.RepoWithQuery)
+			cmd.Dir = genDirPath
+
+			err := cmd.Run()
+			if err != nil {
+				logger.Debug("err", err.Error())
+				return errors.Wrap(err, "could not get repository")
+			}
+
+			logger.Debug("run go build", f.RepoWithQuery)
+
+			// Building generator. Store generator in specific gen directory.
+			cmd = exec.Command("go", "build", "-o", generatorPath, fmt.Sprintf("%s/pkg/mod/%s/main.go", p.gopath, f.RepoWithQuery))
+			cmd.Dir = genDirPath
+
+			logger.Debug("path", cmd.Path)
+			logger.Debug("generator path", generatorPath)
+
+			err = cmd.Run()
+			if err != nil {
+				logger.Debug("err", err.Error())
+				return errors.Wrap(err, "could not build plugin")
+			}
+
+			logger.Debug("check stat", f.RepoWithQuery)
+
+			// Check that generator installed.
 			if _, err := os.Stat(generatorPath); os.IsNotExist(err) {
-				needToInstall = true
-
-				logger.Debug("generator is not installed", g.Repository, g.Version)
-				Printf(kindInfo, "Installing %s %s", g.Repository, g.Version)
-
-				genDirPath := p.gopath + "/pkg/gen"
-
-				// Create gen directory if it does not exist.
-				if _, err := os.Stat(genDirPath); os.IsNotExist(err) {
-					err = os.MkdirAll(genDirPath, os.ModePerm)
-					if err != nil {
-						return errors.Wrap(err, "could not make gen dir")
-					}
-				}
-
-				// Download generator using go get.
-				cmd := exec.Command("go", "get", "-u", generatorID)
-				cmd.Dir = genDirPath
-
-				err := cmd.Run()
-				if err != nil {
-					logger.Debug("err", err.Error())
-					return errors.Wrap(err, "could not get repository")
-				}
-
-				logger.Debug("run go build", g.Repository, g.Version)
-
-				// Building generator. Store generator in specific gen directory.
-				cmd = exec.Command("go", "build", "-o", generatorPath, fmt.Sprintf("%s/pkg/mod/%s/main.go", p.gopath, generatorID))
-				cmd.Dir = genDirPath
-
-				logger.Debug("path", cmd.Path)
-				logger.Debug("generator path", generatorPath)
-
-				err = cmd.Run()
-				if err != nil {
-					logger.Debug("err", err.Error())
-					return errors.Wrap(err, "could not build plugin")
-				}
-
-				logger.Debug("check stat", g.Repository, g.Version)
-
-				// Check that generator installed.
-				if _, err := os.Stat(generatorPath); os.IsNotExist(err) {
-					logger.Debug("generator could not be installed", g.Repository, g.Version)
-					return errors.Wrap(err, "could not install plugin")
-				}
-
-				Printf(kindSuccess, "Generator %s %s successfully installed", g.Repository, g.Version)
+				logger.Debug("generator could not be installed", f.RepoWithQuery)
+				return errors.Wrap(err, "could not install plugin")
 			}
 
-			// Initialize client for current generator.
-			client := plugin.NewClient(&plugin.ClientConfig{
-				HandshakeConfig: pkg.DefaultHandshakeConfig,
-				Plugins: map[string]plugin.Plugin{
-					generatorID: &pkg.NetRPCWorker{},
-				},
-				Cmd:    exec.Command(generatorPath),
-				Logger: logger,
-			})
-			p.clients = append(p.clients, client)
-
-			rpcClient, err := client.Client()
-			if err != nil {
-				logger.Debug("could not get plugin client", g.Repository, g.Version)
-				return errors.Wrap(err, "could not get plugin client")
-			}
-
-			raw, err := rpcClient.Dispense(generatorID)
-			if err != nil {
-				logger.Debug("could not dispense plugin", g.Repository, g.Version)
-				return errors.Wrap(err, "could not dispense plugin")
-			}
-
-			p.generators[generatorID] = raw.(pkg.Generator)
+			Printf(kindSuccess, "Generator %s successfully installed", f.RepoWithQuery)
 		}
+
+		// Initialize client for current generator.
+		client := plugin.NewClient(&plugin.ClientConfig{
+			HandshakeConfig: pkg.DefaultHandshakeConfig,
+			Plugins: map[string]plugin.Plugin{
+				f.RepoWithQuery: &pkg.NetRPCWorker{},
+			},
+			Cmd:    exec.Command(generatorPath),
+			Logger: logger,
+		})
+		p.clients = append(p.clients, client)
+
+		rpcClient, err := client.Client()
+		if err != nil {
+			logger.Debug("could not get plugin client", f.RepoWithQuery)
+			return errors.Wrap(err, "could not get plugin client")
+		}
+
+		raw, err := rpcClient.Dispense(f.RepoWithQuery)
+		if err != nil {
+			logger.Debug("could not dispense plugin", f.RepoWithQuery)
+			return errors.Wrap(err, "could not dispense plugin")
+		}
+
+		p.generators[f.RepoWithQuery] = raw.(pkg.Generator)
 	}
 
-	if needToInstall {
+	if somethingInstalled {
 		Print(kindSuccess, "All necessary generators configured successfully!")
 	}
 
 	return nil
 }
 
-// Builds an id of generator from its repository path and version.
-func buildGeneratorID(repository string, version string) string {
-	// It is a hack for more convenient version specification of generator in gen.json.
-	// We check if it is semver tags and if it is so we append append v prefix.
-	if versionRegexp.MatchString(version) {
-		version = "v" + version
-	}
-
-	return fmt.Sprintf("%s@%s", repository, version)
-}
-
 // Builds a path to generator plugin binary.
-func (p *generatorPool) buildGeneratorPath(repository string, version string) string {
-	return fmt.Sprintf("%s/pkg/gen/generator/%s/generator", p.gopath, buildGeneratorID(repository, version))
+func (p *generatorPool) buildGeneratorPath(repositoryWithQuery string) string {
+	return fmt.Sprintf("%s/pkg/gen/generator/%s/generator", p.gopath, repositoryWithQuery)
 }
 
 // Returns a generator interface by repository and version.
-func (p *generatorPool) Get(repository string, version string) pkg.Generator {
-	return p.generators[buildGeneratorID(repository, version)]
+func (p *generatorPool) Get(repository string) pkg.Generator {
+	return p.generators[repository]
 }
 
 // Close kills all generator plugin clients.

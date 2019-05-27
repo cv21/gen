@@ -6,7 +6,7 @@ require (
 	github.com/dave/jennifer v1.3.0
 	github.com/disiqueira/gotree v1.0.0
 	github.com/fatih/structtag v1.0.0 // indirect
-	github.com/go-yaml/yaml v2.1.0+incompatible
+	github.com/ghodss/yaml v1.0.0
 	github.com/hashicorp/go-hclog v0.9.2
 	github.com/hashicorp/go-plugin v1.0.0
 	github.com/kr/pretty v0.1.0 // indirect

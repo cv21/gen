@@ -9,12 +9,11 @@ import (
 
 	"github.com/cv21/gen/internal"
 	"github.com/cv21/gen/pkg"
-	"github.com/go-yaml/yaml"
+	"github.com/ghodss/yaml"
 	. "github.com/logrusorgru/aurora"
 )
 
 const (
-	defaultConfigPathJSON = "./gen.json"
 	defaultConfigPathYML  = "./gen.yml"
 )
 
@@ -46,7 +45,7 @@ func main() {
 	}
 
 	// Parse config file.
-	config, err := parseConfigYML(rawConf, defaultConfigPathJSON)
+	config, err := parseYMLConfig(rawConf)
 	if err != nil {
 		fmt.Println(Red(err))
 		os.Exit(1)
@@ -78,21 +77,15 @@ func main() {
 	}
 }
 
-// parseConfigJSON loads file and parses it to internal config struct.
-func parseConfigJSON(rawConf []byte, configPath string) (*internal.Config, error) {
-	config := &internal.Config{}
-	err := json.Unmarshal(rawConf, config)
+// parseYMLConfig loads file and parses it to internal config struct.
+func parseYMLConfig(rawConf []byte) (*internal.Config, error) {
+	rawJSONConfig, err := yaml.YAMLToJSON(rawConf)
 	if err != nil {
 		return nil, err
 	}
 
-	return config, nil
-}
-
-// loadConfigYML loads file and parses it to internal config struct.
-func parseConfigYML(rawConf []byte, configPath string) (*internal.Config, error) {
 	config := &internal.Config{}
-	err := yaml.Unmarshal(rawConf, config)
+	err = json.Unmarshal(rawJSONConfig, config)
 	if err != nil {
 		return nil, err
 	}
