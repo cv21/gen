@@ -1,4 +1,5 @@
 # Gen
+[![Gitter chat](https://badges.gitter.im/cv21/gen.png)](https://gitter.im/gen-generator/community)
 
 Flexible code generation tool which perfectly integrates with your project.
 
