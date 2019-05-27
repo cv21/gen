@@ -58,7 +58,7 @@ func TestBasicGenerationFlow_ValidateResultPath(t *testing.T) {
 			t.Error(tc.Name, err)
 		}
 
-		err = gf.ValidateResultPath(xx)
+		err = gf.validateResultPath(xx)
 		if (err != nil) != tc.IsErr {
 			t.Error(tc.Name, err)
 		}

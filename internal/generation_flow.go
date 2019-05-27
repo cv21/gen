@@ -15,18 +15,17 @@ import (
 	astra "github.com/vetcher/go-astra"
 )
 
-const defaultFilePermissions = 0755
+const (
+	defaultFilePermissions = 0755
+)
 
 type (
 	// It is a general config structure which is represents parsed gen.json file.
 	Config struct {
 		Files []struct {
-			Path       string `json:"path"`
-			Generators []struct {
-				Repository string          `json:"repository"`
-				Version    string          `json:"version"`
-				Params     json.RawMessage `json:"params"`
-			} `json:"generators"`
+			Path          string          `json:"path"`
+			RepoWithQuery string          `json:"repository"`
+			Params        json.RawMessage `json:"params"`
 		} `json:"files"`
 	}
 
@@ -74,58 +73,54 @@ func (g *basicGenerationFlow) Run() error {
 			return errors.Wrap(err, "could not parse file")
 		}
 
-		for _, generator := range conf.Generators {
-			generatorID := buildGeneratorID(generator.Repository, generator.Version)
+		generatorBranch := fileBranch.Add(fmt.Sprint(Green(Bold(conf.RepoWithQuery))))
 
-			generatorBranch := fileBranch.Add(fmt.Sprint(Green(Bold(generator.Repository)), Green(Faint(generator.Version))))
+		Printf(kindInfo, "Generating by %s", conf.RepoWithQuery)
+		genResult, err := g.genPool.
+			Get(conf.RepoWithQuery).
+			Generate(&pkg.GenerateParams{
+				File:   f,
+				Params: conf.Params,
+			})
 
-			Printf(kindInfo, "Generating by %s", generatorID)
-			genResult, err := g.genPool.
-				Get(generator.Repository, generator.Version).
-				Generate(&pkg.GenerateParams{
-					File:   f,
-					Params: generator.Params,
-				})
+		if err != nil {
+			return errors.Wrap(err, "could not generate file")
+		}
 
+		for _, resFile := range genResult.Files {
+			resFile.Path, err = filepath.Abs(resFile.Path)
 			if err != nil {
-				return errors.Wrap(err, "could not generate file")
+				return errors.Wrap(err, "could not construct absolute path")
 			}
 
-			for _, resFile := range genResult.Files {
-				resFile.Path, err = filepath.Abs(resFile.Path)
-				if err != nil {
-					return errors.Wrap(err, "could not construct absolute path")
-				}
+			err = g.validateResultPath(resFile.Path)
+			if err != nil {
+				return errors.Wrap(err, "invalid result path")
+			}
 
-				err = g.ValidateResultPath(resFile.Path)
-				if err != nil {
-					return errors.Wrap(err, "invalid result path")
-				}
+			// Check that directory exists
+			// Trying to create directory if it does not exist.
+			dir := filepath.Dir(resFile.Path)
 
-				// Check that directory exists
-				// Trying to create directory if it does not exist.
-				dir := filepath.Dir(resFile.Path)
-
-				if _, err := os.Stat(dir); err != nil {
-					if os.IsNotExist(err) {
-						if err = os.MkdirAll(dir, defaultFilePermissions); err != nil {
-							return errors.Wrap(err, "could not make directory for generated file")
-						}
-					} else {
-						return errors.Wrap(err, "could not stat directory where generated file need to be stored")
+			if _, err := os.Stat(dir); err != nil {
+				if os.IsNotExist(err) {
+					if err = os.MkdirAll(dir, defaultFilePermissions); err != nil {
+						return errors.Wrap(err, "could not make directory for generated file")
 					}
+				} else {
+					return errors.Wrap(err, "could not stat directory where generated file need to be stored")
 				}
-
-				err = ioutil.WriteFile(resFile.Path, []byte(resFile.Content), os.FileMode(defaultFilePermissions))
-				if err != nil {
-					return errors.Wrap(err, "could not write file")
-				}
-
-				relPath, _ := filepath.Rel(g.currentDir, resFile.Path)
-				generatorBranch.Add(fmt.Sprintf("./%s", relPath))
-
-				Printf(kindSuccess, "Successfully generated file %s", resFile.Path)
 			}
+
+			err = ioutil.WriteFile(resFile.Path, []byte(resFile.Content), os.FileMode(defaultFilePermissions))
+			if err != nil {
+				return errors.Wrap(err, "could not write file")
+			}
+
+			relPath, _ := filepath.Rel(g.currentDir, resFile.Path)
+			generatorBranch.Add(fmt.Sprintf("./%s", relPath))
+
+			Printf(kindSuccess, "Successfully generated file %s", resFile.Path)
 		}
 	}
 
@@ -136,7 +131,7 @@ func (g *basicGenerationFlow) Run() error {
 }
 
 // Validate result path against some rules.
-func (g *basicGenerationFlow) ValidateResultPath(path string) error {
+func (g *basicGenerationFlow) validateResultPath(path string) error {
 	if !strings.HasPrefix(path, g.currentDir) {
 		return errors.Wrap(ErrFileOutOfBasePath, path)
 	}

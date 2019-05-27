@@ -9,10 +9,13 @@ import (
 
 	"github.com/cv21/gen/internal"
 	"github.com/cv21/gen/pkg"
+	"github.com/ghodss/yaml"
 	. "github.com/logrusorgru/aurora"
 )
 
-const defaultConfigPath = "./gen.json"
+const (
+	defaultConfigPathYML  = "./gen.yml"
+)
 
 func main() {
 	gopath := os.Getenv("GOPATH")
@@ -33,13 +36,22 @@ func main() {
 		os.Exit(1)
 	}
 
-	// Load and parse config.
-	config, err := loadConfig(currentDir, defaultConfigPath)
+	// Load config file.
+	path := filepath.Join(currentDir, defaultConfigPathYML)
+	rawConf, err := ioutil.ReadFile(path)
 	if err != nil {
 		fmt.Println(Red(err))
 		os.Exit(1)
 	}
 
+	// Parse config file.
+	config, err := parseYMLConfig(rawConf)
+	if err != nil {
+		fmt.Println(Red(err))
+		os.Exit(1)
+	}
+
+	// Register gob types for plugin interaction.
 	pkg.RegisterGobTypes()
 
 	genPool, err := internal.BuildGeneratorPool(config, gopath)
@@ -65,16 +77,15 @@ func main() {
 	}
 }
 
-// loadConfig loads file and parses it to internal config struct.
-func loadConfig(currentDir, configPath string) (*internal.Config, error) {
-	path := filepath.Join(currentDir, configPath)
-	rawConf, err := ioutil.ReadFile(path)
+// parseYMLConfig loads file and parses it to internal config struct.
+func parseYMLConfig(rawConf []byte) (*internal.Config, error) {
+	rawJSONConfig, err := yaml.YAMLToJSON(rawConf)
 	if err != nil {
 		return nil, err
 	}
 
 	config := &internal.Config{}
-	err = json.Unmarshal(rawConf, config)
+	err = json.Unmarshal(rawJSONConfig, config)
 	if err != nil {
 		return nil, err
 	}
