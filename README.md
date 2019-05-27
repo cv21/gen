@@ -37,8 +37,9 @@ Using __gen__ you need only `gen` cli utility and `gen.yml` file (see its [descr
 
 ### Description of `gen.yml`
 
-Typical `gen.yml` consists of `files` config array.
-<br>Each file consists of:
+Typical `gen.yml` consists of `files` config array. 
+
+Each of `files` consists of:
 - `path` - Path to source file which will be passed to specified generator.
 - `repository` - Link to generator repository. It supports [standard Golang module queries](https://tip.golang.org/cmd/go/#hdr-Module_queries) for versioning.
 - `params` - Custom params for generator. 
@@ -55,8 +56,6 @@ files:
     params:
       another_generator_custom_param: other_value
 ```
-
-\* 
 
 ### Future Enhancements
 
