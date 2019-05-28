@@ -10,7 +10,6 @@ import (
 
 	"github.com/cv21/gen/pkg"
 	"github.com/disiqueira/gotree"
-	. "github.com/logrusorgru/aurora"
 	"github.com/pkg/errors"
 	astra "github.com/vetcher/go-astra"
 )
@@ -60,22 +59,18 @@ func NewBasicGenerationFlow(cfg *Config, currentDir string, genPool GeneratorPoo
 
 // Runs basic generation flow.
 func (g *basicGenerationFlow) Run() error {
-	rootTree := gotree.New(g.currentDir)
+	rootTree := gotree.New(Sprint(kindInfo, g.currentDir))
+
+	var filesUpdated, filesCreated int
 
 	for _, conf := range g.cfg.Files {
-		fileBranch := rootTree.Add(conf.Path)
-
 		path := filepath.Join(g.currentDir, conf.Path)
 
-		Printf(kindInfo, "Parsing file %s", path)
 		f, err := astra.ParseFile(path)
 		if err != nil {
 			return errors.Wrap(err, "could not parse file")
 		}
 
-		generatorBranch := fileBranch.Add(fmt.Sprint(Green(Bold(conf.RepoWithQuery))))
-
-		Printf(kindInfo, "Generating by %s", conf.RepoWithQuery)
 		genResult, err := g.genPool.
 			Get(conf.RepoWithQuery).
 			Generate(&pkg.GenerateParams{
@@ -98,6 +93,16 @@ func (g *basicGenerationFlow) Run() error {
 				return errors.Wrap(err, "invalid result path")
 			}
 
+			if _, err := os.Stat(resFile.Path); err != nil {
+				if os.IsNotExist(err) {
+					filesCreated++
+				} else {
+					return errors.Wrap(err, "could not stat file")
+				}
+			} else {
+				filesUpdated++
+			}
+
 			// Check that directory exists
 			// Trying to create directory if it does not exist.
 			dir := filepath.Dir(resFile.Path)
@@ -118,16 +123,38 @@ func (g *basicGenerationFlow) Run() error {
 			}
 
 			relPath, _ := filepath.Rel(g.currentDir, resFile.Path)
-			generatorBranch.Add(fmt.Sprintf("./%s", relPath))
-
-			Printf(kindSuccess, "Successfully generated file %s", resFile.Path)
+			addPathToTree(rootTree, fmt.Sprintf("./%s", relPath), Sprint(kindInfoFaint, conf.RepoWithQuery))
 		}
 	}
 
-	Print(kindSuccess, "\nAll files successfully generated!")
-	Print(kindInfo, rootTree.Print())
+	Println(kindSuccess, "All files successfully generated!\n")
+	Println(kindInfo, "Result tree:")
+	Println(kindInfo, rootTree.Print())
+	Println(kindInfo, "Result stats:")
+	Printf(kindInfo, "    Files created: %d\n", filesCreated)
+	Printf(kindInfo, "    Files updated: %d\n", filesUpdated)
 
 	return nil
+}
+
+func addPathToTree(rootTree gotree.Tree, pathFromRoot string, generatorID string) {
+	pathList := strings.Split(strings.TrimPrefix(pathFromRoot, "./"), "/")
+
+	curTree := rootTree
+PathListLoop:
+	for i, pathItem := range pathList {
+		for _, curTreeItem := range curTree.Items() {
+			if curTreeItem.Text() == pathItem {
+				curTree = curTreeItem
+				continue PathListLoop
+			}
+		}
+
+		pathItem = fmt.Sprintf("%s %s", Sprint(kindSuccess, pathItem), Sprintf(kindInfoFaint, " <- %s", generatorID))
+		if i == len(pathList)-1 {
+			curTree = curTree.Add(pathItem)
+		}
+	}
 }
 
 // Validate result path against some rules.

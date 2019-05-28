@@ -5,9 +5,9 @@ import (
 	"os"
 	"os/exec"
 
+	"github.com/cv21/gen/pkg"
 	hclog "github.com/hashicorp/go-hclog"
 	plugin "github.com/hashicorp/go-plugin"
-	"github.com/cv21/gen/pkg"
 	"github.com/pkg/errors"
 )
 
@@ -61,18 +61,13 @@ func (p *generatorPool) initGenerators() error {
 		Level:  hclog.Error,
 	})
 
-	// Flag indicates that we have been installed some generators while running.
-	var somethingInstalled bool
-
 	for _, f := range p.cfg.Files {
 		generatorPath := p.buildGeneratorPath(f.RepoWithQuery)
 
 		// Check that generator binary exists.
 		if _, err := os.Stat(generatorPath); os.IsNotExist(err) {
-			somethingInstalled = true
-
 			logger.Debug("generator is not installed", f.RepoWithQuery)
-			Printf(kindInfo, "Installing %s", f.RepoWithQuery)
+			Printf(kindInfo, "Installing generator %s ... ", f.RepoWithQuery)
 
 			genDirPath := p.gopath + "/pkg/gen"
 
@@ -117,7 +112,7 @@ func (p *generatorPool) initGenerators() error {
 				return errors.Wrap(err, "could not install plugin")
 			}
 
-			Printf(kindSuccess, "Generator %s successfully installed", f.RepoWithQuery)
+			Println(kindSuccess, "ok")
 		}
 
 		// Initialize client for current generator.
@@ -144,10 +139,6 @@ func (p *generatorPool) initGenerators() error {
 		}
 
 		p.generators[f.RepoWithQuery] = raw.(pkg.Generator)
-	}
-
-	if somethingInstalled {
-		Print(kindSuccess, "All necessary generators configured successfully!")
 	}
 
 	return nil

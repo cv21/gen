@@ -14,10 +14,13 @@ import (
 )
 
 const (
-	defaultConfigPathYML  = "./gen.yml"
+	defaultConfigPathYML = "./gen.yml"
+	version              = "v1.0.0"
 )
 
 func main() {
+	fmt.Printf("gen code generator %s\n\n", version)
+
 	gopath := os.Getenv("GOPATH")
 	if gopath == "" {
 		fmt.Println(Yellow("Could not find gopath. Please specify GOPATH environment variable"))

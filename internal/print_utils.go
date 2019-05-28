@@ -3,7 +3,7 @@ package internal
 import (
 	"fmt"
 
-	. "github.com/logrusorgru/aurora"
+	"github.com/logrusorgru/aurora"
 )
 
 // printKind is a kind of information that we need to print.
@@ -15,25 +15,43 @@ const (
 	kindWarn
 	kindSuccess
 	kindInfo
+	kindInfoFaint
 )
 
-// Printf formats given string with parameters and after calls Print with a result of formatting.
+func Sprint(kind printKind, args ...interface{}) string {
+	return fmt.Sprint(colorize(kind, fmt.Sprint(args...)))
+}
+
+func Sprintf(kind printKind, format string, args ...interface{}) string {
+	return fmt.Sprint(colorize(kind, fmt.Sprintf(format, args...)))
+}
+
+// Printf formats given string with parameters and after calls Println with a result of formatting.
 func Printf(kind printKind, format string, args ...interface{}) {
 	Print(kind, fmt.Sprintf(format, args...))
 }
 
-// Print prints some value to stdout using coloring driven by kind.
+// Println prints some value to stdout using coloring driven by kind.
 func Print(kind printKind, v interface{}) {
+	fmt.Print(colorize(kind, v))
+}
+
+// Println prints some value to stdout using coloring driven by kind.
+func Println(kind printKind, v interface{}) {
+	fmt.Println(colorize(kind, v))
+}
+
+func colorize(kind printKind, v interface{}) string {
 	switch kind {
 	case kindWarn:
-		fmt.Println(Yellow(v))
+		return fmt.Sprint(aurora.BrightYellow(v))
 	case kindErr:
-		fmt.Println(Red(v))
+		return fmt.Sprint(aurora.BrightRed(v))
 	case kindSuccess:
-		fmt.Println(Green(v))
+		return fmt.Sprint(aurora.BrightGreen(v))
+	case kindInfoFaint:
+		return fmt.Sprint(aurora.Faint(v))
 	default:
-		fmt.Println(v)
+		return fmt.Sprint(v)
 	}
-
-	return
 }
