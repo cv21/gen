@@ -28,11 +28,15 @@ Using __gen__ you need only `gen` cli utility and `gen.yml` file (see its [descr
 
 ### Generators
 
-- [gen-generator-base](https://github.com/cv21/gen-generator-base) - gen generator basis generation
-- [gen-generator-mock](https://github.com/cv21/gen-generator-mock) - mocks generation
-- gen-gokit-http (coming soon) - go-kit http transport generation
-- gen-gokit-grpc (coming soon) - go-kit grpc transport generation
-- gen-logging-middleware (coming soon) - logging middleware generator
+| Repository | Description | Status | 
+| --- | --- | --- | 
+| [gen-generator-base](https://github.com/cv21/gen-generator-base) | Generates basis for gen generator | Released |
+| [gen-interface-mock](https://github.com/cv21/gen-interface-mock) | Generates mocks from interface | Released |
+| [gen-interface-exchanges](https://github.com/cv21/gen-interface-exchanges) | Generates exchanges from interface methods signatures | Released |
+| gen-logging-middleware | logging middleware generator | Coming soon |
+| gen-gokit-http | Generates HTTP transport for go-kit from interface | Coming soon |
+| gen-gokit-grpc | Generates gRPC transport for go-kit from interface | Coming soon |
+| ... | ... | ... |
 
 \* *You can use other or make your own generator for __gen__*<br>\* *Feel free to __contibute__ your generators to this page*
 
